@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "DOM Tree Analyzer",
+  "version": "1.0",
+  "description": "Analyzes and highlights interactive DOM elements",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "downloads",
+    "sidePanel"
+  ],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_title": "Open DOM Tree Analyzer"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
