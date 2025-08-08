@@ -1,0 +1,76 @@
+{
+  "interactiveElements": [
+    {
+      "attributes": {
+        "for": "username"
+      },
+      "description": "label text=\"Username\"",
+      "index": 0,
+      "isInViewport": true,
+      "isVisible": true,
+      "tagName": "label",
+      "text": "Username",
+      "xpath": "html/body/div/form/label[1]"
+    },
+    {
+      "attributes": {
+        "id": "username",
+        "name": "username",
+        "required": "",
+        "type": "text"
+      },
+      "description": "input (text)",
+      "index": 1,
+      "isInViewport": true,
+      "isVisible": true,
+      "tagName": "input",
+      "text": "",
+      "xpath": "html/body/div[1]/form/input[1]"
+    },
+    {
+      "attributes": {
+        "for": "password"
+      },
+      "description": "label text=\"Password\"",
+      "index": 2,
+      "isInViewport": true,
+      "isVisible": true,
+      "tagName": "label",
+      "text": "Password",
+      "xpath": "html/body/div[1]/form/label[2]"
+    },
+    {
+      "attributes": {
+        "id": "password",
+        "name": "password",
+        "required": "",
+        "type": "password"
+      },
+      "description": "input (password)",
+      "index": 3,
+      "isInViewport": true,
+      "isVisible": true,
+      "tagName": "input",
+      "text": "",
+      "xpath": "html/body/div[1]/form/input[2]"
+    },
+    {
+      "attributes": {
+        "type": "submit"
+      },
+      "description": "button (submit) text=\"Log In\"",
+      "index": 4,
+      "isInViewport": true,
+      "isVisible": true,
+      "tagName": "button",
+      "text": "Log In",
+      "xpath": "html/body/div[1]/form/button"
+    }
+  ],
+  "pageInfo": {
+    "timestamp": "2025-08-07T09:38:52.740Z",
+    "title": "Simple Login Page",
+    "url": "file:///C:/Users/kjdm435/vsworkspace/taf-dom-analyzer/test-login.html"
+  },
+  "totalInteractiveElements": 5
+}

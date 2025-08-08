@@ -304,6 +304,204 @@
       color: #4299e1;
       font-weight: 600;
     }
+
+    /* Table styles for detailed results */
+    .results-table-section {
+      background: white;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      display: none;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .dark-mode .results-table-section {
+      background: #2d3748;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    .results-table-section.visible {
+      display: block;
+    }
+
+    .results-table-section h3 {
+      color: #2d3748;
+      margin-bottom: 12px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .dark-mode .results-table-section h3 {
+      color: #e2e8f0;
+    }
+
+    .table-container {
+      max-height: 400px;
+      overflow-y: auto;
+      overflow-x: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      background: white;
+    }
+
+    .dark-mode .table-container {
+      border: 1px solid #4a5568;
+      background: #1a202c;
+    }
+
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      min-width: 800px;
+    }
+
+    .results-table th,
+    .results-table td {
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+
+    .dark-mode .results-table th,
+    .dark-mode .results-table td {
+      border-bottom: 1px solid #4a5568;
+    }
+
+    .results-table th {
+      background: #f7fafc;
+      font-weight: 600;
+      color: #2d3748;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .dark-mode .results-table th {
+      background: #2d3748;
+      color: #e2e8f0;
+    }
+
+    .results-table td {
+      color: #4a5568;
+    }
+
+    .dark-mode .results-table td {
+      color: #cbd5e0;
+    }
+
+    .results-table tr:hover {
+      background: #f7fafc;
+    }
+
+    .dark-mode .results-table tr:hover {
+      background: #2d3748;
+    }
+
+    .results-table .index-col {
+      width: 60px;
+      text-align: center;
+      font-weight: 600;
+      color: #4299e1;
+    }
+
+    .results-table .xpath-col,
+    .results-table .css-col {
+      max-width: 200px;
+      word-break: break-all;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+    }
+
+    .results-table .text-col {
+      max-width: 150px;
+      word-break: break-word;
+    }
+
+    .results-table .tagname-col {
+      width: 80px;
+      font-weight: 600;
+      color: #805ad5;
+    }
+
+    .dark-mode .results-table .tagname-col {
+      color: #b794f6;
+    }
+
+    .results-table .attributes-col {
+      max-width: 200px;
+      word-break: break-word;
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+    }
+
+    .results-table .visible-col {
+      width: 80px;
+      text-align: center;
+    }
+
+    .visible-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .visible-badge.true {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+
+    .visible-badge.false {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+
+    .dark-mode .visible-badge.true {
+      background: #22543d;
+      color: #c6f6d5;
+    }
+
+    .dark-mode .visible-badge.false {
+      background: #742a2a;
+      color: #fed7d7;
+    }
+
+    /* Scrollbar styles */
+    .table-container::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    .table-container::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+
+    .dark-mode .table-container::-webkit-scrollbar-track {
+      background: #4a5568;
+    }
+
+    .table-container::-webkit-scrollbar-thumb {
+      background: #cbd5e0;
+      border-radius: 4px;
+    }
+
+    .table-container::-webkit-scrollbar-thumb:hover {
+      background: #a0aec0;
+    }
+
+    .dark-mode .table-container::-webkit-scrollbar-thumb {
+      background: #718096;
+    }
+
+    .dark-mode .table-container::-webkit-scrollbar-thumb:hover {
+      background: #a0aec0;
+    }
   </style>
 </head>
 <body>
@@ -327,18 +525,10 @@
       </div>
 
       <div class="setting-row">
-        <span class="setting-label">Prioritize by Importance</span>
-        <input type="checkbox" id="prioritizeByImportance" checked class="setting-input">
-      </div>
-
-      <div class="setting-row">
         <span class="setting-label">Viewport Expansion</span>
-        <input type="number" id="viewportExpansion" value="0" min="-1" max="500" class="setting-input">
-      </div>
-
-      <div class="setting-row">
-        <span class="setting-label">Max Elements</span>
-        <input type="number" id="maxElements" value="100" min="1" max="1000" class="setting-input">
+        <div class="toggle-switch" id="viewportExpansionToggle" title="Toggle Viewport Expansion">
+          <div class="toggle-slider"></div>
+        </div>
       </div>
     </div>
 
@@ -376,6 +566,27 @@
 
     <div id="status" class="status">
       Ready to analyze page
+    </div>
+
+    <div id="detailedResults" class="results-table-section">
+      <h3>Detailed Analysis Results</h3>
+      <h5>(click the cell to copy)</h5>
+      <div class="table-container">
+        <table class="results-table">
+          <thead>
+            <tr>
+              <th class="index-col">#</th>
+              <th class="tagname-col">Tag Name</th>
+              <th class="xpath-col">XPath</th>
+              <th class="css-col">CSS Path</th>
+              <th class="text-col">Text</th>
+            </tr>
+          </thead>
+          <tbody id="detailedResultsBody">
+            <!-- Dynamic content will be injected here -->
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 

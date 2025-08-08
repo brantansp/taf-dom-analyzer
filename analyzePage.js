@@ -321,34 +321,299 @@ function analyzePage(args = {}) {
     return index;
   }
 
-  function getXPathTree(element, stopAtBoundary = true) {
+  function getXPathTree(element, stopAtBoundary = true, stopAtElement = null) {
     if (xpathCache.has(element)) return xpathCache.get(element);
 
-    const segments = [];
-    let currentElement = element;
-
-    while (currentElement && currentElement.nodeType === Node.ELEMENT_NODE) {
-      if (
-        stopAtBoundary &&
-        (currentElement.parentNode instanceof ShadowRoot ||
-          currentElement.parentNode instanceof HTMLIFrameElement)
-      ) {
-        break;
-      }
-
-      const position = getElementPosition(currentElement);
-      const tagName = currentElement.nodeName.toLowerCase();
-      const xpathIndex = position > 0 ? `[${position}]` : "";
-      segments.unshift(`${tagName}${xpathIndex}`);
-
-      currentElement = currentElement.parentNode;
-    }
-
-    const result = segments.join("/");
+    const result = generateOptimalXPath(element);
     xpathCache.set(element, result);
     return result;
   }
 
+  function generateOptimalXPath(element) {
+    if (!element || element.nodeType !== Node.ELEMENT_NODE) {
+      return "";
+    }
+
+    const tagName = element.nodeName.toLowerCase();
+
+    // Priority 1: ID-based paths
+    if (element.id && element.id.trim()) {
+      return `//${tagName}[@id='${element.id}']`;
+    }
+
+    // Priority 2: Class-based paths (if class is unique or meaningful)
+    if (element.className && typeof element.className === 'string') {
+      const classes = element.className.trim().split(/\s+/).filter(cls => cls.length > 0);
+      if (classes.length > 0) {
+        // Try single class first
+        for (const cls of classes) {
+          if (isClassUnique(element, cls)) {
+            return `//${tagName}[@class='${cls}']`;
+          }
+        }
+        // Try full class attribute if it's reasonably unique
+        const fullClass = classes.join(' ');
+        if (isClassCombinationUnique(element, fullClass)) {
+          return `//${tagName}[@class='${fullClass}']`;
+        }
+        // Use contains for partial class match if it's distinctive
+        const distinctiveClass = findDistinctiveClass(element, classes);
+        if (distinctiveClass) {
+          return `//${tagName}[contains(@class,'${distinctiveClass}')]`;
+        }
+      }
+    }
+
+    // Priority 3: Attribute-based paths
+    const attributeXPath = generateAttributeBasedXPath(element);
+    if (attributeXPath) {
+      return attributeXPath;
+    }
+
+    // Priority 4: Text-based paths
+    const textXPath = generateTextBasedXPath(element);
+    if (textXPath) {
+      return textXPath;
+    }
+
+    // Priority 5: Combined attribute paths
+    const combinedXPath = generateCombinedAttributeXPath(element);
+    if (combinedXPath) {
+      return combinedXPath;
+    }
+
+    // Priority 6: Parent-child relationships
+    const contextualXPath = generateContextualXPath(element);
+    if (contextualXPath) {
+      return contextualXPath;
+    }
+
+    // Fallback: Use structural path with contains for classes
+    return generateStructuralXPath(element);
+  }
+
+  function isClassUnique(element, className) {
+    try {
+      const tagName = element.nodeName.toLowerCase();
+      const elements = document.querySelectorAll(`${tagName}.${CSS.escape(className)}`);
+      return elements.length === 1 && elements[0] === element;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function isClassCombinationUnique(element, fullClass) {
+    try {
+      const tagName = element.nodeName.toLowerCase();
+      const selector = `${tagName}[class="${fullClass}"]`;
+      const elements = document.querySelectorAll(selector);
+      return elements.length === 1 && elements[0] === element;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function findDistinctiveClass(element, classes) {
+    // Look for classes that are likely to be unique identifiers
+    const distinctivePatterns = /^(btn|button|input|form|modal|dialog|menu|nav|header|footer|main|content|container|wrapper|card|item|entry|row|col|grid|flex)/i;
+
+    for (const cls of classes) {
+      if (distinctivePatterns.test(cls) && cls.length > 3) {
+        try {
+          const tagName = element.nodeName.toLowerCase();
+          const elements = document.querySelectorAll(`${tagName}[class*="${cls}"]`);
+          if (elements.length <= 3) { // Reasonably unique
+            return cls;
+          }
+        } catch (e) {
+          continue;
+        }
+      }
+    }
+    return null;
+  }
+
+  function generateAttributeBasedXPath(element) {
+    const tagName = element.nodeName.toLowerCase();
+
+    // High priority attributes in order
+    const priorityAttrs = ['name', 'data-testid', 'data-test', 'data-cy', 'aria-label', 'title', 'alt', 'href', 'src', 'for', 'type', 'role', 'placeholder'];
+
+    for (const attr of priorityAttrs) {
+      const value = element.getAttribute(attr);
+      if (value && value.trim()) {
+        const xpath = `//${tagName}[@${attr}='${value.trim()}']`;
+        if (isXPathUnique(xpath, element)) {
+          return xpath;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  function generateTextBasedXPath(element) {
+    const tagName = element.nodeName.toLowerCase();
+    const textContent = element.textContent ? element.textContent.trim() : '';
+
+    // Skip if text is too long or empty
+    if (!textContent || textContent.length > 50) {
+      return null;
+    }
+
+    // Direct text match
+    let xpath = `//${tagName}[text()='${textContent}']`;
+    if (isXPathUnique(xpath, element)) {
+      return xpath;
+    }
+
+    // Contains text match
+    if (textContent.length > 3) {
+      xpath = `//${tagName}[contains(text(),'${textContent}')]`;
+      if (isXPathUnique(xpath, element)) {
+        return xpath;
+      }
+    }
+
+    // Normalize space (useful for elements with whitespace issues)
+    xpath = `//${tagName}[normalize-space()='${textContent}']`;
+    if (isXPathUnique(xpath, element)) {
+      return xpath;
+    }
+
+    return null;
+  }
+
+  function generateCombinedAttributeXPath(element) {
+    const tagName = element.nodeName.toLowerCase();
+    const attrs = [];
+
+    // Collect meaningful attributes
+    const meaningfulAttrs = ['type', 'name', 'role', 'data-testid', 'aria-label'];
+    for (const attr of meaningfulAttrs) {
+      const value = element.getAttribute(attr);
+      if (value && value.trim()) {
+        attrs.push(`@${attr}='${value.trim()}'`);
+      }
+    }
+
+    // Try combinations of 2 attributes
+    if (attrs.length >= 2) {
+      for (let i = 0; i < attrs.length - 1; i++) {
+        for (let j = i + 1; j < attrs.length; j++) {
+          const xpath = `//${tagName}[${attrs[i]} and ${attrs[j]}]`;
+          if (isXPathUnique(xpath, element)) {
+            return xpath;
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  function generateContextualXPath(element) {
+    const tagName = element.nodeName.toLowerCase();
+
+    // Try parent context with meaningful attributes
+    const parent = element.parentElement;
+    if (parent) {
+      const parentTagName = parent.nodeName.toLowerCase();
+
+      // Parent with ID
+      if (parent.id) {
+        const xpath = `//${parentTagName}[@id='${parent.id}']//${tagName}`;
+        if (isXPathReasonablyUnique(xpath, element)) {
+          return xpath;
+        }
+      }
+
+      // Parent with distinctive class
+      if (parent.className && typeof parent.className === 'string') {
+        const classes = parent.className.trim().split(/\s+/);
+        const distinctiveClass = findDistinctiveClass(parent, classes);
+        if (distinctiveClass) {
+          const xpath = `//${parentTagName}[contains(@class,'${distinctiveClass}')]//${tagName}`;
+          if (isXPathReasonablyUnique(xpath, element)) {
+            return xpath;
+          }
+        }
+      }
+
+      // Parent with role or data attributes
+      const parentMeaningfulAttrs = ['role', 'data-testid', 'data-test'];
+      for (const attr of parentMeaningfulAttrs) {
+        const value = parent.getAttribute(attr);
+        if (value) {
+          const xpath = `//${parentTagName}[@${attr}='${value}']//${tagName}`;
+          if (isXPathReasonablyUnique(xpath, element)) {
+            return xpath;
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  function generateStructuralXPath(element) {
+    const tagName = element.nodeName.toLowerCase();
+
+    // As a last resort, use position but try to make it more stable
+    if (element.parentElement) {
+      const siblings = Array.from(element.parentElement.children)
+        .filter(sibling => sibling.nodeName.toLowerCase() === tagName);
+
+      if (siblings.length === 1) {
+        return `//${tagName}`;
+      }
+
+      const position = siblings.indexOf(element) + 1;
+
+      // Try to add some context to make it more stable
+      if (element.parentElement.id) {
+        return `//*[@id='${element.parentElement.id}']//${tagName}[${position}]`;
+      }
+
+      if (element.parentElement.className) {
+        const parentClasses = element.parentElement.className.trim().split(/\s+/);
+        const distinctiveClass = findDistinctiveClass(element.parentElement, parentClasses);
+        if (distinctiveClass) {
+          return `//[contains(@class,'${distinctiveClass}')]//${tagName}[${position}]`;
+        }
+      }
+
+      return `//${tagName}[${position}]`;
+    }
+
+    return `//${tagName}`;
+  }
+
+  function isXPathUnique(xpath, element) {
+    try {
+      const result = document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+      return result.snapshotLength === 1 && result.snapshotItem(0) === element;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function isXPathReasonablyUnique(xpath, element) {
+    try {
+      const result = document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+      // Allow up to 3 matches for contextual paths, but the element should be among them
+      if (result.snapshotLength <= 3) {
+        for (let i = 0; i < result.snapshotLength; i++) {
+          if (result.snapshotItem(i) === element) {
+            return true;
+          }
+        }
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
   function isTextNodeVisible(textNode) {
     // ...existing implementation...
     try {
